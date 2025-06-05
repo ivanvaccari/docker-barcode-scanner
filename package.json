@@ -1,0 +1,31 @@
+{
+    "name": "docker-qrcode-scanner",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "build": "tsc",
+        "start": "tsc-watch --noClear -p ./tsconfig.json --onSuccess \"node ./dist/index.js\""
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/ivanvaccari/docker-qrcode-scanner.git"
+    },
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/ivanvaccari/docker-qrcode-scanner/issues"
+    },
+    "homepage": "https://github.com/ivanvaccari/docker-qrcode-scanner#readme",
+    "devDependencies": {
+        "@types/express": "^5.0.2",
+        "tsc-watch": "^7.1.1",
+        "typescript": "^5.8.3"
+    },
+    "dependencies": {
+        "@sinclair/typebox": "^0.34.33",
+        "ajv": "^8.17.1",
+        "express": "^5.1.0"
+    }
+}
