@@ -6,7 +6,10 @@
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "build": "tsc",
-        "start": "tsc-watch --noClear -p ./tsconfig.json --onSuccess \"node ./dist/index.js\""
+        "start": "tsc-watch --noClear -p ./tsconfig.json --onSuccess \"node ./dist/index.js\"",
+        "postinstall": "run-script-os",
+        "postinstall:linux": "npm install --no-save --ignore-scripts @napi-rs/canvas-linux-x64-gnu@0.1.66",
+        "postinstall:win32": "npm install --no-save --ignore-scripts @napi-rs/canvas-win32-x64-msvc@0.1.66"
     },
     "repository": {
         "type": "git",
@@ -20,12 +23,25 @@
     "homepage": "https://github.com/ivanvaccari/docker-qrcode-scanner#readme",
     "devDependencies": {
         "@types/express": "^5.0.2",
+        "@types/pngjs": "^6.0.5",
         "tsc-watch": "^7.1.1",
         "typescript": "^5.8.3"
     },
     "dependencies": {
+        "@napi-rs/canvas": "0.1.66",
         "@sinclair/typebox": "^0.34.33",
+        "@zxing/library": "0.21.3",
         "ajv": "^8.17.1",
-        "express": "^5.1.0"
+        "ejs": "^3.1.10",
+        "express": "^5.1.0",
+        "jimp": "^1.6.0",
+        "json-schema-faker": "^0.5.9",
+        "jsqr": "1.4.0",
+        "pdfjs-dist": "4.10.38",
+        "pngjs": "^7.0.0",
+        "run-script-os": "^1.1.6"
+    },
+    "engines": {
+        "node": ">=20.16.0"
     }
 }

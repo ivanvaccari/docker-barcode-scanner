@@ -1,26 +1,58 @@
 import express, { NextFunction, Request, Response } from 'express';
 import { env } from './env';
 import { restValidator } from './lib/restValidator';
-import { ScanBodyModelJsonSchema } from './models/ScanBodyModel';
+import { ScanBodyModel, ScanBodyModelJsonSchema } from './models/ScanBodyModel';
 import { CustomError } from './lib/RestError';
+import { QRCodeScanner } from './lib/QRCodeScanner';
+import { ScanImageResultJsonSchema } from './models/ScanimageResult';
+import { JSONSchemaFaker } from 'json-schema-faker';
+import { asyncMiddleware } from './lib/asyncMiddleware';
 
 const app = express();
 
-app.use(express.json());
+app.use(express.json({ limit: env.MAX_BODY_SIZE })); //For parsing application/pdf
+
+//For rendering the main web page
+app.set('view engine', 'ejs');
 
 /**
  * The main entry point to run the scan service.
  */
-app.post('/api/scan', restValidator.body(ScanBodyModelJsonSchema), (req, res) => {
-    res.send("TODO")
-    res.end();
+app.post('/api/scan', restValidator.body(ScanBodyModelJsonSchema), asyncMiddleware(async (req, res) => {
+    const body: ScanBodyModel = req.body;
+    const buffer = Buffer.from(body.bytes, 'base64');
+    const scanner = new QRCodeScanner();
+    const scanResult = await scanner.scan(buffer, req.body);
+    res.json(scanResult);
+}));
+
+/**
+ * Main web page. This is just a placeholder that displays some documentation
+ */
+app.get('/', (req, res, next) => {
+
+    const data = {
+        inputJsonSchema: ScanBodyModelJsonSchema,
+        outputJsonSchema: ScanImageResultJsonSchema,
+        inputSample: JSONSchemaFaker.generate(ScanBodyModelJsonSchema),
+    }
+    res.render('swaggerinette', data, (err, html) => {
+        if (err) { next(err); return; }
+        res.send(html)
+    })
 })
 
 /**
  * Error handler. Just sends out the error as a json response.
  */
-app.use((error: CustomError, req: Request, res: Response, next: NextFunction) => {
-    res.status(error?.statusCode ?? 500).json(error)
+app.use((error: any, req: Request, res: Response, next: NextFunction) => {
+
+    let _error: CustomError;
+    if (error instanceof CustomError) _error = error;
+    else if (error instanceof Error) _error = new CustomError(error.message, { stack: error.stack }, 500);
+    else _error = new CustomError('Internal server error', { error: error }, 500);
+
+    res.status(error?.statusCode ?? 500).json(_error)
 })
 
 app.listen(env.PORT, () => {

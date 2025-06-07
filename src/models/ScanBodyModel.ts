@@ -14,10 +14,10 @@ export const ScanBodyModelJsonSchema = Type.Object({
         pages: Type.Optional(Type.Array(Type.Number()))
     })),
     crop: Type.Optional(Type.Object({
-        x: Type.Optional(Type.Number()),
-        y: Type.Optional(Type.Number()),
-        width: Type.Optional(Type.Number()),
-        height: Type.Optional(Type.Number())
+        x: Type.Number(),
+        y: Type.Number(),
+        width: Type.Number(),
+        height: Type.Number()
     }))
 }, {
     additionalProperties: false,
