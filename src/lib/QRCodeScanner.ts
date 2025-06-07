@@ -21,17 +21,6 @@ import { ScanBodyModel } from '../models/ScanBodyModel';
 import { CustomError } from './RestError';
 import { ScanResultModel } from '../models/ScanResultModel';
 
-/**
- * Setup some hints for the zxing QR code reader.
- */
-const hints = new Map();
-const formats = [BarcodeFormat.QR_CODE];
-hints.set(DecodeHintType.POSSIBLE_FORMATS, formats);
-hints.set(DecodeHintType.TRY_HARDER, true);
-const reader = new MultiFormatReader();
-reader.setHints(hints);
-
-
 
 /**
  * Scanner options. Same as ScanBodyModel but without the bytes field
@@ -59,6 +48,7 @@ export class QRCodeScanner {
                 throw new CustomError(`Unsupported content type: ${options.contentType}`, {}, 400);
         }
     }
+
 
     /**
      * Scan a pdf file buffer for a QR code.
@@ -109,7 +99,7 @@ export class QRCodeScanner {
 
         // NOTE: scale is set to 2 because otherwise the image is too small and the qrcode 
         // gets lost in the noise.
-        var viewport = page.getViewport({ scale: 2 });
+        var viewport = page.getViewport({ scale: options.pdfOptions?.scale || 2 });
         var canvasFactory: any = pdfDocument.canvasFactory;
         const canvasAndContext = canvasFactory.create(
             viewport.width,
@@ -135,6 +125,7 @@ export class QRCodeScanner {
      */
     private async scanPdfPage(pdfDocument: any, pageNum: number, options: ScanOptions): Promise<ScanResultModel> {
         const pageImageBuffer = await this.extrapolatePdfPage(pdfDocument, pageNum, options);
+
         const result = await this.scanImage(pageImageBuffer, options);
         result.results?.forEach((r) => r.index = pageNum);
         return result
@@ -153,70 +144,129 @@ export class QRCodeScanner {
             results: [],
         }
 
-        // Scan using scanJsqr. Use jsQR first as it's generally faster than zxing.
-        let startTime = Date.now();
-        try {
+        // Prepare an array of buffers to be analyzed. 
+        let buffers: Buffer[] = [];
 
-            const jsqrResult = await this.scanJsqr(buffer);
-            if (jsqrResult) {
-                result.found++;
-                result.results.push({
-                    text: jsqrResult,
-                    engine: 'jsqr',
-                    index: 0,
-                    durationMs: Date.now() - startTime
-                });
-                // If jsQR found a QR code, return the result immediately
-                return result;
-            };
+        // If crop options are provided, apply them to the image.
+        // This produces a series of buffers to be scanned. All of them will be scanned.
+        if (Array.isArray(options.crop) && options.crop.length > 0) {
+            const image = await Jimp.read(buffer);
+            for (const crop of options.crop) {
+                // coordinates are expressed in percentage of the image size to ignore actual sizing in pixels.
+                const x = Math.floor(image.bitmap.width * crop.x / 100);
+                const y = Math.floor(image.bitmap.height * crop.y / 100);
+                const width = Math.floor(image.bitmap.width * crop.width / 100);
+                const height = Math.floor(image.bitmap.height * crop.height / 100);
 
-        } catch (error) {
-            result.results.push({
-                engine: 'zxing',
-                error: error instanceof Error ? error.message : String(error),
-                durationMs: Date.now() - startTime
-            });
-        }
-
-
-        // If jsQR didn't find a QR code, try zxing
-        startTime = Date.now();
-        try {
-            const zxingResult = await this.scanZxing(buffer);
-            if (zxingResult) {
-                result.found++;
-                result.results.push({
-                    text: zxingResult,
-                    engine: 'zxing',
-                    index: 0,
-                    durationMs: Date.now() - startTime
-                });
-                // If zxing found a QR code, return the result immediately
-                return result;
+                // Crop the imahge and scan the cropped area
+                const croppedImage = await image.clone().crop({ x: x, y: y, w: width, h: height });
+                buffers.push(await croppedImage.getBuffer('image/png'));
             }
-        } catch (error) {
-            result.results.push({
-                engine: 'zxing',
-                error: error instanceof Error ? error.message : String(error),
-                durationMs: Date.now() - startTime
-            });
+        } else {
+            // If no cropping is applied, just use the original buffer
+            buffers = [buffer];
         }
 
+        // Prepare the formats to be used for scanning.
+        const formats = this.getformats(options);
+
+        // Process all the buffers. If cropping was applied, this will be multiple buffers
+        // If no cropping was applied, this will be a single buffer.
+        for (const _buffer of buffers) {
+
+            // Scan using scanJsqr. Use jsQR first as it's generally faster than zxing.
+            let startTime = Date.now();
+            try {
+                const jsqrResult = await this.scanJsqr(_buffer, formats);
+                if (jsqrResult) {
+                    result.found++;
+                    result.results.push({
+                        text: jsqrResult,
+                        engine: 'jsqr',
+                        index: 0,
+                        durationMs: Date.now() - startTime
+                    });
+                    // If jsQR found a QR code, return the result immediately
+                    return result;
+                };
+
+            } catch (error) {
+                result.results.push({
+                    engine: 'jsqr',
+                    error: error instanceof Error ? error.message : String(error),
+                    durationMs: Date.now() - startTime
+                });
+            }
+
+
+            // If jsQR didn't find a QR code, try zxing
+            startTime = Date.now();
+            try {
+                const zxingResult = await this.scanZxing(_buffer, formats);
+                if (zxingResult) {
+                    result.found++;
+                    result.results.push({
+                        text: zxingResult,
+                        engine: 'zxing',
+                        index: 0,
+                        durationMs: Date.now() - startTime
+                    });
+                    // If zxing found a QR code, return the result immediately
+                    return result;
+                }
+            } catch (error) {
+                result.results.push({
+                    engine: 'zxing',
+                    error: error instanceof Error ? error.message : String(error),
+                    durationMs: Date.now() - startTime
+                });
+            }
+        }
 
         return result;
 
     }
 
     /**
+     * Calculates the barcode formats to be used for scanning based on the provided options.
+     * 
+     * @param options 
+     * @returns 
+     */
+    private getformats(options: ScanOptions): BarcodeFormat[] {
+        const formats = [];
+        if (Array.isArray(options.formats) && options.formats.length > 0) {
+            for (const format of options.formats) {
+                if (BarcodeFormat[format as keyof typeof BarcodeFormat] !== undefined) {
+                    formats.push(BarcodeFormat[format as keyof typeof BarcodeFormat]);
+                } else {
+                    throw new CustomError(`Unsupported barcode format: ${format}`, {}, 400);
+                }
+            }
+        } else {
+            // If no formats are specified, use the default 2D QR code formats
+            formats.push(BarcodeFormat.QR_CODE);
+        }
+
+        return formats;
+    }
+    /**
      * Scans a PNG image buffer for a QR code using ZXing libraries.
      * 
      * @param buffer The PNG image buffer to scan.
+     * @param options The options for scanning, including barcode formats.
      * 
      * @returns A promise that resolves to the decoded QR code text or null if no QR code is found.
      */
-    private async scanZxing(buffer: Buffer): Promise<string | null> {
+    private async scanZxing(buffer: Buffer, formats: BarcodeFormat[]): Promise<string | null> {
         const { binaryBitmap } = await this.pngBufferToBinaryBitmap(buffer);
-        const decoded = reader.decode(binaryBitmap);
+
+        const hints = new Map<DecodeHintType,any>();
+        hints.set(DecodeHintType.POSSIBLE_FORMATS, formats);
+        hints.set(DecodeHintType.TRY_HARDER, true);
+        
+        const reader = new MultiFormatReader();
+        const decoded = reader.decode(binaryBitmap, hints);
         const text = decoded.getText()
         if (text) return text;
         return null
@@ -230,7 +280,13 @@ export class QRCodeScanner {
      * 
      * @returns A promise that resolves to the decoded QR code text or null if no QR code is found.
      */
-    private async scanJsqr(buffer: Buffer): Promise<string | null> {
+    private async scanJsqr(buffer: Buffer, formats: BarcodeFormat[]): Promise<string | null> {
+
+
+        // jsQR only supports QR codes. Skip this if the format is not QR_CODE.
+        if (!formats.includes(BarcodeFormat.QR_CODE)) {
+            return null;
+        }
 
         const image = await Jimp.read(buffer)
         const value = jsQR(new Uint8ClampedArray(image.bitmap.data), image.bitmap.width, image.bitmap.height);

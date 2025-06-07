@@ -37,7 +37,8 @@ app.get('/', (req, res, next) => {
         inputSample: JSONSchemaFaker.generate(ScanBodyModelJsonSchema),
         version: env.PACKAGE_JSON.version,
     }
-    res.render('swaggerinette', data, (err, html) => {
+    
+    res.render('landingpage', data, (err, html) => {
         if (err) { next(err); return; }
         res.send(html)
     })

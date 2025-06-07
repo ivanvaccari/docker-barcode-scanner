@@ -1,3 +1,0 @@
-- [ ] Aggiungi gestione options
-- non fissare il valore " var viewport = page.getViewport({ scale: 2 });" a 2, rendilo dinamico
-- implementa crops
