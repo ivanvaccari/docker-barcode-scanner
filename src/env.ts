@@ -1,5 +1,10 @@
 
+import fs from 'fs';
 
+/**
+ * Environment variables for the application.
+ * This file reads environment variables and provides defaults.
+ */
 export const env = {
 
     /**
@@ -19,4 +24,9 @@ export const env = {
      * Defaults to 10mb.
      */
     MAX_BODY_SIZE: process.env.MAX_BODY_SIZE || '10mb',
+
+    /**
+     * A copy of the package.json file.
+     */
+    PACKAGE_JSON: JSON.parse(fs.readFileSync('./package.json', 'utf-8'))
 }

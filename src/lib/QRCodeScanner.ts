@@ -19,7 +19,7 @@ import jsQR from 'jsqr';
 import { PNG } from 'pngjs';
 import { ScanBodyModel } from '../models/ScanBodyModel';
 import { CustomError } from './RestError';
-import { ScanImageResult } from '../models/ScanimageResult';
+import { ScanResultModel } from '../models/ScanResultModel';
 
 /**
  * Setup some hints for the zxing QR code reader.
@@ -49,12 +49,95 @@ export class QRCodeScanner {
      * @param options 
      * @returns 
      */
-    public scan(buffer: Buffer, options: ScanOptions): Promise<ScanImageResult|null> {
+    public async scan(buffer: Buffer, options: ScanOptions): Promise<ScanResultModel> {
         switch (options.contentType) {
-            case 'image/png': return this.scanImage(buffer, options);
+            case 'image/png':
+                return this.scanImage(buffer, options);
+            case 'application/pdf':
+                return this.scanPdf(buffer, options);
             default:
                 throw new CustomError(`Unsupported content type: ${options.contentType}`, {}, 400);
         }
+    }
+
+    /**
+     * Scan a pdf file buffer for a QR code.
+     * 
+     * @param buffer The PDF file buffer to scan.
+     * @param options 
+     */
+    public async scanPdf(buffer: Buffer, options: ScanOptions): Promise<ScanResultModel> {
+        const scanResult: ScanResultModel = {
+            found: 0,
+            results: [],
+        };
+
+        const rawData = new Uint8Array(buffer);
+        // @ts-expect-error ignore typings
+        const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.min.mjs");
+        const pdfDocument = await pdfjsLib.getDocument(rawData).promise;
+
+        // Prepare wich pages must be scanned
+        let pagesNumbers = Array(pdfDocument.numPages).fill(0).map((_, i) => i + 1);
+        if (options.pdfOptions?.pages) {
+            // If specific pages are requested, use those instead
+            pagesNumbers = options.pdfOptions.pages;
+        }
+
+        // Scan each page of the PDF document
+        for (const pageNum of pagesNumbers) {
+            const pageResult = await this.scanPdfPage(pdfDocument, pageNum, options);
+            scanResult.found += pageResult.found;
+            if (pageResult.results.length > 0) {
+                scanResult.results!.push(...pageResult.results!);
+            }
+        }
+
+        return scanResult;
+    }
+
+    /**
+     * Extrapolate a single page from a PDF document and return it as a PNG image buffer.
+     * 
+     * @param pdfDocument The PDF document to render.
+     * @param pageNum The page number to extract (1-based index).
+     * @param options  
+     * @returns 
+     */
+    private async extrapolatePdfPage(pdfDocument: any, pageNum: number, options: ScanOptions): Promise<Buffer> {
+        const page = await pdfDocument.getPage(pageNum);
+
+        // NOTE: scale is set to 2 because otherwise the image is too small and the qrcode 
+        // gets lost in the noise.
+        var viewport = page.getViewport({ scale: 2 });
+        var canvasFactory: any = pdfDocument.canvasFactory;
+        const canvasAndContext = canvasFactory.create(
+            viewport.width,
+            viewport.height
+        );
+        var renderContext = {
+            canvasContext: canvasAndContext.context,
+            viewport: viewport,
+        };
+
+        var renderTask = page.render(renderContext);
+        await renderTask.promise;
+        return canvasAndContext.canvas.toBuffer("image/png");
+    }
+
+    /**
+     * Scan a specific page of a PDF document for a QR code.
+     * 
+     * @param pdfDocument The PDF document to scan.
+     * @param pageNum The page number to scan (1-based index). 
+     * @param options  
+     * @returns 
+     */
+    private async scanPdfPage(pdfDocument: any, pageNum: number, options: ScanOptions): Promise<ScanResultModel> {
+        const pageImageBuffer = await this.extrapolatePdfPage(pdfDocument, pageNum, options);
+        const result = await this.scanImage(pageImageBuffer, options);
+        result.results?.forEach((r) => r.index = pageNum);
+        return result
     }
 
     /**
@@ -63,29 +146,71 @@ export class QRCodeScanner {
      * @param buffer The PNG image buffer to scan.
      * @returns An array of ScanImageResult objects containing the decoded QR code text and the engine used for decoding.
      */
-    public async scanImage(buffer: Buffer, options: ScanOptions): Promise<ScanImageResult | null> {
-        // Scan using scanJsqr. Use jsQR first as it's generally faster than zxing.
-        const jsqrResult = await this.scanJsqr(buffer);
-        if (jsqrResult) {
-            return { text: jsqrResult, engine: 'jsqr' };
+    public async scanImage(buffer: Buffer, options: ScanOptions): Promise<ScanResultModel> {
+
+        let result: ScanResultModel = {
+            found: 0,
+            results: [],
         }
+
+        // Scan using scanJsqr. Use jsQR first as it's generally faster than zxing.
+        let startTime = Date.now();
+        try {
+
+            const jsqrResult = await this.scanJsqr(buffer);
+            if (jsqrResult) {
+                result.found++;
+                result.results.push({
+                    text: jsqrResult,
+                    engine: 'jsqr',
+                    index: 0,
+                    durationMs: Date.now() - startTime
+                });
+                // If jsQR found a QR code, return the result immediately
+                return result;
+            };
+
+        } catch (error) {
+            result.results.push({
+                engine: 'zxing',
+                error: error instanceof Error ? error.message : String(error),
+                durationMs: Date.now() - startTime
+            });
+        }
+
 
         // If jsQR didn't find a QR code, try zxing
-        const zxingResult = await this.scanZxing(buffer);
-        if (zxingResult) {
-            return { text: zxingResult, engine: 'zxing' };
+        startTime = Date.now();
+        try {
+            const zxingResult = await this.scanZxing(buffer);
+            if (zxingResult) {
+                result.found++;
+                result.results.push({
+                    text: zxingResult,
+                    engine: 'zxing',
+                    index: 0,
+                    durationMs: Date.now() - startTime
+                });
+                // If zxing found a QR code, return the result immediately
+                return result;
+            }
+        } catch (error) {
+            result.results.push({
+                engine: 'zxing',
+                error: error instanceof Error ? error.message : String(error),
+                durationMs: Date.now() - startTime
+            });
         }
 
-        return null; // If no QR code was found, return null
+
+        return result;
 
     }
 
     /**
      * Scans a PNG image buffer for a QR code using ZXing libraries.
      * 
-     * @param grayscaleImage The grayscale image buffer to scan.
-     * @param width The width of the image.
-     * @param height The height of the image. 
+     * @param buffer The PNG image buffer to scan.
      * 
      * @returns A promise that resolves to the decoded QR code text or null if no QR code is found.
      */
@@ -95,28 +220,21 @@ export class QRCodeScanner {
         const text = decoded.getText()
         if (text) return text;
         return null
-
     }
 
 
     /**
      * Scan a converted grayscale image buffer for a QR code using the jsQR library.
      * 
-     * @param grayscaleImage The grayscale image buffer to scan.
-     * @param width The width of the image.
-     * @param height The height of the image. 
+     * @param buffer The PNG image buffer to scan.
      * 
      * @returns A promise that resolves to the decoded QR code text or null if no QR code is found.
      */
-
     private async scanJsqr(buffer: Buffer): Promise<string | null> {
-        try {
-            const image = await Jimp.read(buffer)
-            const value = jsQR(new Uint8ClampedArray(image.bitmap.data), image.bitmap.width, image.bitmap.height);
-            return value?.data ? value.data : null
-        } catch (error) {
-            return null;
-        }
+
+        const image = await Jimp.read(buffer)
+        const value = jsQR(new Uint8ClampedArray(image.bitmap.data), image.bitmap.width, image.bitmap.height);
+        return value?.data ? value.data : null
 
     }
 

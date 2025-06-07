@@ -48,7 +48,7 @@
     </head>
 
     <body>
-        <h2>Docker qrcode scanner</h2>
+        <h2>Docker qrcode scanner <%= version %></h2>
 
 
         <div class="endpoint pb-2 ">
@@ -61,6 +61,10 @@
         <div clas="input-schema pb-2 ">
             <div class="section-title pb-2 pt-2">Input json schema</div>
             <pre><%= JSON.stringify(inputJsonSchema, null, 2)%></pre>
+        </div>
+        <div clas="input-schema pb-2 ">
+            <div class="section-title pb-2 pt-2">Output json schema</div>
+            <pre><%= JSON.stringify(outputJsonSchema, null, 2)%></pre>
         </div>
     </body>
 

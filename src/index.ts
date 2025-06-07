@@ -4,7 +4,7 @@ import { restValidator } from './lib/restValidator';
 import { ScanBodyModel, ScanBodyModelJsonSchema } from './models/ScanBodyModel';
 import { CustomError } from './lib/RestError';
 import { QRCodeScanner } from './lib/QRCodeScanner';
-import { ScanImageResultJsonSchema } from './models/ScanimageResult';
+import { ScanResultModelJsonSchema } from './models/ScanResultModel';
 import { JSONSchemaFaker } from 'json-schema-faker';
 import { asyncMiddleware } from './lib/asyncMiddleware';
 
@@ -33,8 +33,9 @@ app.get('/', (req, res, next) => {
 
     const data = {
         inputJsonSchema: ScanBodyModelJsonSchema,
-        outputJsonSchema: ScanImageResultJsonSchema,
+        outputJsonSchema: ScanResultModelJsonSchema,
         inputSample: JSONSchemaFaker.generate(ScanBodyModelJsonSchema),
+        version: env.PACKAGE_JSON.version,
     }
     res.render('swaggerinette', data, (err, html) => {
         if (err) { next(err); return; }
@@ -46,7 +47,6 @@ app.get('/', (req, res, next) => {
  * Error handler. Just sends out the error as a json response.
  */
 app.use((error: any, req: Request, res: Response, next: NextFunction) => {
-
     let _error: CustomError;
     if (error instanceof CustomError) _error = error;
     else if (error instanceof Error) _error = new CustomError(error.message, { stack: error.stack }, 500);

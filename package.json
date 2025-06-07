@@ -8,8 +8,10 @@
         "build": "tsc",
         "start": "tsc-watch --noClear -p ./tsconfig.json --onSuccess \"node ./dist/index.js\"",
         "postinstall": "run-script-os",
+        "clean": "rimraf ./dist",
         "postinstall:linux": "npm install --no-save --ignore-scripts @napi-rs/canvas-linux-x64-gnu@0.1.66",
-        "postinstall:win32": "npm install --no-save --ignore-scripts @napi-rs/canvas-win32-x64-msvc@0.1.66"
+        "postinstall:win32": "npm install --no-save --ignore-scripts @napi-rs/canvas-win32-x64-msvc@0.1.66",
+        "build-docker": "docker build -t ivanva/qrcode-scanner ."
     },
     "repository": {
         "type": "git",
@@ -24,6 +26,7 @@
     "devDependencies": {
         "@types/express": "^5.0.2",
         "@types/pngjs": "^6.0.5",
+        "rimraf": "^6.0.1",
         "tsc-watch": "^7.1.1",
         "typescript": "^5.8.3"
     },
