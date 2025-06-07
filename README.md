@@ -1,4 +1,4 @@
-# docker-qrcode-scanner
+# docker-barcode-scanner
 
 A microservice that scans for 1D/2D in images and pdf files.
 

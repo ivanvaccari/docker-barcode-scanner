@@ -2,7 +2,7 @@
 
     <head>
 
-        <title>Docker qrcode scanner</title>
+        <title>Docker barcode scanner</title>
         <style>
             pre {
                 background-color: #f4f4f4;
@@ -43,13 +43,15 @@
     </head>
 
     <body>
-        <h2>Docker qrcode scanner <%= version %></h2>
+        <h2>Docker barcode scanner <%= version %></h2>
 
-
-        <div class="endpoint pb-2 ">
+        <div class="pb-2">
+            <a href="https://github.com/ivanvaccari/docker-barcode-scanner">GitHub</a>
+        </div>
+        <div class="endpoint">
             <div class='method'>POST</div> <div class='path'>/api/scan</div>
         </div>
-        <div clas="input-sample pb-2 ">
+        <div clas="input-sample pb-2 pt-2 ">
             <div class="section-title pb-2 pt-2">Input sample</div>
             <pre><%= JSON.stringify(inputSample, null, 2)%></pre>
         </div>

@@ -1,5 +1,5 @@
 {
-    "name": "docker-qrcode-scanner",
+    "name": "docker-barcode-scanner",
     "version": "1.0.0",
     "description": "",
     "main": "index.js",
@@ -11,18 +11,18 @@
         "clean": "rimraf ./dist",
         "postinstall:linux": "npm install --no-save --ignore-scripts @napi-rs/canvas-linux-x64-gnu@0.1.66",
         "postinstall:win32": "npm install --no-save --ignore-scripts @napi-rs/canvas-win32-x64-msvc@0.1.66",
-        "build-docker": "docker build -t ivanva/qrcode-scanner ."
+        "build-docker": "docker build -t ivanva/barcode-scanner ."
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/ivanvaccari/docker-qrcode-scanner.git"
+        "url": "git+https://github.com/ivanvaccari/docker-barcode-scanner.git"
     },
     "author": "",
     "license": "ISC",
     "bugs": {
-        "url": "https://github.com/ivanvaccari/docker-qrcode-scanner/issues"
+        "url": "https://github.com/ivanvaccari/docker-barcode-scanner/issues"
     },
-    "homepage": "https://github.com/ivanvaccari/docker-qrcode-scanner#readme",
+    "homepage": "https://github.com/ivanvaccari/docker-barcode-scanner#readme",
     "devDependencies": {
         "@types/express": "^5.0.2",
         "@types/pngjs": "^6.0.5",

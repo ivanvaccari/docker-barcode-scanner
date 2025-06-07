@@ -3,7 +3,7 @@ import { env } from './env';
 import { restValidator } from './lib/restValidator';
 import { ScanBodyModel, ScanBodyModelJsonSchema } from './models/ScanBodyModel';
 import { CustomError } from './lib/RestError';
-import { QRCodeScanner } from './lib/QRCodeScanner';
+import { BarcodeScanner } from './lib/BarcodeScanner';
 import { ScanResultModelJsonSchema } from './models/ScanResultModel';
 import { JSONSchemaFaker } from 'json-schema-faker';
 import { asyncMiddleware } from './lib/asyncMiddleware';
@@ -21,7 +21,7 @@ app.set('view engine', 'ejs');
 app.post('/api/scan', restValidator.body(ScanBodyModelJsonSchema), asyncMiddleware(async (req, res) => {
     const body: ScanBodyModel = req.body;
     const buffer = Buffer.from(body.bytes, 'base64');
-    const scanner = new QRCodeScanner();
+    const scanner = new BarcodeScanner();
     const scanResult = await scanner.scan(buffer, req.body);
     res.json(scanResult);
 }));
@@ -37,7 +37,7 @@ app.get('/', (req, res, next) => {
         inputSample: JSONSchemaFaker.generate(ScanBodyModelJsonSchema),
         version: env.PACKAGE_JSON.version,
     }
-    
+
     res.render('landingpage', data, (err, html) => {
         if (err) { next(err); return; }
         res.send(html)

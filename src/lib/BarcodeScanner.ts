@@ -29,7 +29,7 @@ import { ScanResultModel } from '../models/ScanResultModel';
 export type ScanOptions = Omit<ScanBodyModel, 'bytes'>
 
 
-export class QRCodeScanner {
+export class BarcodeScanner {
 
     /**
      * Scan a buffer for a QR code using the specified options.
