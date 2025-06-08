@@ -2,7 +2,7 @@
 
 A microservice that scans for 1D/2D in images and pdf files.
 
-This service offers just one REST API: `/api/scan` that takes all the needed data as input ad returns the found codes. It supports png images and PDF files.
+This service offers just one REST API: `/api/scan` that takes all the needed data as input ad returns the found codes. It supports PNG images, JPEG images and PDF files.
 
 Supported 1D/2D formats:
 

@@ -16,7 +16,6 @@
 import { BarcodeFormat, BinaryBitmap, DecodeHintType, HybridBinarizer, MultiFormatReader, RGBLuminanceSource } from '@zxing/library';
 import { Jimp } from 'jimp';
 import jsQR from 'jsqr';
-import { PNG } from 'pngjs';
 import { ScanBodyModel } from '../models/ScanBodyModel';
 import { CustomError } from './RestError';
 import { ScanResultModel } from '../models/ScanResultModel';
@@ -41,6 +40,7 @@ export class BarcodeScanner {
     public async scan(buffer: Buffer, options: ScanOptions): Promise<ScanResultModel> {
         switch (options.contentType) {
             case 'image/png':
+            case 'image/jpeg':
                 return this.scanImage(buffer, options);
             case 'application/pdf':
                 return this.scanPdf(buffer, options);
@@ -134,7 +134,7 @@ export class BarcodeScanner {
     /**
      * Scan a PNG image buffer for a QR code using both jsQR and ZXing libraries.
      * 
-     * @param buffer The PNG image buffer to scan.
+     * @param buffer The Jpeg or PNG image buffer to scan.
      * @returns An array of ScanImageResult objects containing the decoded QR code text and the engine used for decoding.
      */
     public async scanImage(buffer: Buffer, options: ScanOptions): Promise<ScanResultModel> {
@@ -175,9 +175,11 @@ export class BarcodeScanner {
         for (const _buffer of buffers) {
 
             // Scan using scanJsqr. Use jsQR first as it's generally faster than zxing.
+            // NOTE: this however works only with QR codes, so if the formats include other types of barcodes,
+            // it will skip them internally.
             let startTime = Date.now();
             try {
-                const jsqrResult = await this.scanJsqr(_buffer, formats);
+                const jsqrResult = await this.scanJsqr(_buffer, formats, options);
                 if (jsqrResult) {
                     result.found++;
                     result.results.push({
@@ -202,7 +204,7 @@ export class BarcodeScanner {
             // If jsQR didn't find a QR code, try zxing
             startTime = Date.now();
             try {
-                const zxingResult = await this.scanZxing(_buffer, formats);
+                const zxingResult = await this.scanZxing(_buffer, formats, options);
                 if (zxingResult) {
                     result.found++;
                     result.results.push({
@@ -230,7 +232,7 @@ export class BarcodeScanner {
     /**
      * Calculates the barcode formats to be used for scanning based on the provided options.
      * 
-     * @param options 
+     * @param options Scan options body
      * @returns 
      */
     private getformats(options: ScanOptions): BarcodeFormat[] {
@@ -253,18 +255,27 @@ export class BarcodeScanner {
     /**
      * Scans a PNG image buffer for a QR code using ZXing libraries.
      * 
-     * @param buffer The PNG image buffer to scan.
+     * @param buffer The png or jpeg image buffer to scan.
      * @param options The options for scanning, including barcode formats.
      * 
      * @returns A promise that resolves to the decoded QR code text or null if no QR code is found.
      */
-    private async scanZxing(buffer: Buffer, formats: BarcodeFormat[]): Promise<string | null> {
-        const { binaryBitmap } = await this.pngBufferToBinaryBitmap(buffer);
+    private async scanZxing(buffer: Buffer, formats: BarcodeFormat[], options: ScanOptions): Promise<string | null> {
+        
+        // Convert the image to a format suitable for ZXing
+        // See ZXIng documentation for more details on how to convert images
+        const image = await Jimp.read(buffer);
+        const luminancesUint8Array = new Uint8ClampedArray(image.bitmap.data.length);
+        for (let i = 0; i < image.bitmap.data.length; i++) {
+            luminancesUint8Array[i] = ((image.bitmap.data[i * 4] + image.bitmap.data[i * 4 + 1] * 2 + image.bitmap.data[i * 4 + 2]) / 4) & 0xFF;
+        }
+        const luminanceSource = new RGBLuminanceSource(luminancesUint8Array, image.bitmap.width, image.bitmap.height);
+        const binaryBitmap = new BinaryBitmap(new HybridBinarizer(luminanceSource));
 
-        const hints = new Map<DecodeHintType,any>();
+        
+        const hints = new Map<DecodeHintType, any>();
         hints.set(DecodeHintType.POSSIBLE_FORMATS, formats);
         hints.set(DecodeHintType.TRY_HARDER, true);
-        
         const reader = new MultiFormatReader();
         const decoded = reader.decode(binaryBitmap, hints);
         const text = decoded.getText()
@@ -276,11 +287,11 @@ export class BarcodeScanner {
     /**
      * Scan a converted grayscale image buffer for a QR code using the jsQR library.
      * 
-     * @param buffer The PNG image buffer to scan.
+     * @param buffer The image buffer to scan. Supported formats are PNG and JPEG.
      * 
      * @returns A promise that resolves to the decoded QR code text or null if no QR code is found.
      */
-    private async scanJsqr(buffer: Buffer, formats: BarcodeFormat[]): Promise<string | null> {
+    private async scanJsqr(buffer: Buffer, formats: BarcodeFormat[], options: ScanOptions): Promise<string | null> {
 
 
         // jsQR only supports QR codes. Skip this if the format is not QR_CODE.
@@ -294,36 +305,5 @@ export class BarcodeScanner {
 
     }
 
-    /**
-     * Converts a buffer containing a PNG image to a BinaryBitmap
-     * 
-     * @param buffer The PNG image buffer to convert.
-     * @returns 
-     */
-    private async pngBufferToBinaryBitmap(buffer: Buffer): Promise<{ binaryBitmap: BinaryBitmap, width: number, height: number }> {
-        var png = new PNG();
-
-
-        const { width, height, data } = await new Promise<PNG>((resolve, reject) => {
-            png.parse(buffer, (err, data) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(data);
-                }
-            });
-        });
-
-        const len = width * height;
-        const luminancesUint8Array = new Uint8ClampedArray(len);
-        for (let i = 0; i < len; i++) {
-            luminancesUint8Array[i] = ((data[i * 4] + data[i * 4 + 1] * 2 + data[i * 4 + 2]) / 4) & 0xFF;
-        }
-
-        const luminanceSource = new RGBLuminanceSource(luminancesUint8Array, width, height);
-        const binaryBitmap = new BinaryBitmap(new HybridBinarizer(luminanceSource));
-
-        return { binaryBitmap: binaryBitmap, width: width, height: height };
-    }
 
 }

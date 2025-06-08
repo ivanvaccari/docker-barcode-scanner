@@ -16,6 +16,7 @@ export const ScanBodyModelJsonSchema = Type.Object({
     contentType: Type.Enum({
         'application/pdf': 'application/pdf',
         'image/png': 'image/png',
+        'image/jpeg': 'image/jpeg',
     }, { description: 'Content type of the file expressed in <bytes> property.' }),
 
     bytes: Type.String({
