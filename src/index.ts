@@ -7,10 +7,12 @@ import { BarcodeScanner } from './lib/BarcodeScanner';
 import { ScanResultModelJsonSchema } from './models/ScanResultModel';
 import { JSONSchemaFaker } from 'json-schema-faker';
 import { asyncMiddleware } from './lib/asyncMiddleware';
+import { bearerTokenAuthMiddleware } from './lib/bearerTokenAuthMiddleware';
 
 const app = express();
 
-app.use(express.json({ limit: env.MAX_BODY_SIZE })); //For parsing application/pdf
+app.use(express.json({ limit: env.MAX_BODY_SIZE })); 
+app.use(bearerTokenAuthMiddleware);
 
 //For rendering the main web page
 app.set('view engine', 'ejs');

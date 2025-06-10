@@ -1,6 +1,8 @@
 
 import fs from 'fs';
 
+if (!process.env.BEARER_TOKEN) throw new Error('Environment variable BEARER_TOKEN is not set. Please set it to a valid token for authentication.');
+
 /**
  * Environment variables for the application.
  * This file reads environment variables and provides defaults.
@@ -16,7 +18,7 @@ export const env = {
     /**
      * Bearer token for rest api authentication.
      */
-    BEARER_TOKEN: process.env.BEARER_TOKEN || '',
+    BEARER_TOKEN: process.env.BEARER_TOKEN,
 
     /**
      * Maximum body size for the request.
