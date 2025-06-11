@@ -76,7 +76,7 @@ The service requires the usage of a Bearer token for authentication. The token m
 ### Examples
 
 #### Basic
-This examples just run the scan for a image:
+This examples just run the scan for a image. NOTE: Multiple QRCodes on a single image are not supported unless you use `crop` to cut areas to be processed singularly.
 
 ```js
 
@@ -100,8 +100,7 @@ console.log(await response.json());
 ```
 
 #### PDF
-This examples scans all the pdf pages for qrcodes:
-
+This examples scans all the pdf pages for qrcodes. NOTE: Multiple QRCodes on a single page are not supported unless you use `crop` to cut areas to be processed singularly.
 ```js
 
 import fetch from 'node-fetch';
@@ -151,7 +150,7 @@ const response = await fetch('http://localhost:3000/api/scan', {
         contentType: 'applicaton/pdf',
         bytes: document.toString('base64'),
         pdfOptions: { pages: [2, 3]},
-        crop: [{x:50, y:0, width: 50, height: 50}], // any value is in percentages of the page size
+        crop: [{x:50, y:0, width: 50, height: 50}], // any value is in percentages of the page size. 0 starts at top-left
     }),
 });
 console.log(await response.json());
