@@ -45,7 +45,7 @@
         "jimp": "^1.6.0",
         "json-schema-faker": "^0.5.9",
         "jsqr": "1.4.0",
-        "pdfjs-dist": "4.10.38",
+        "pdfjs-dist": "5.3.31",
         "run-script-os": "^1.1.6"
     },
     "engines": {

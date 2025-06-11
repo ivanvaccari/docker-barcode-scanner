@@ -70,8 +70,8 @@ export class BarcodeScanner {
         const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.min.mjs");
         const pdfDocument = await pdfjsLib.getDocument({
             data: rawData,
-            standardFontDataUrl: path.join(pdfjsDir,'./standard_fonts/'),
-            cMapUrl: path.join(pdfjsDir,'./cmaps/'),
+            standardFontDataUrl: path.posix.join(pdfjsDir,'./standard_fonts/'),
+            cMapUrl: path.posix.join(pdfjsDir,'./cmaps/'),
             cMapPacked: true,
 
         }).promise;
