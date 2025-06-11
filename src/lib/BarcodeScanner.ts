@@ -19,7 +19,10 @@ import jsQR from 'jsqr';
 import { ScanBodyModel } from '../models/ScanBodyModel';
 import { CustomError } from './RestError';
 import { ScanResultModel } from '../models/ScanResultModel';
+import fs from 'fs';
+import path from 'path';
 
+const pdfjsDir = path.join(require.resolve('pdfjs-dist/package.json'), '../');
 
 /**
  * Scanner options. Same as ScanBodyModel but without the bytes field
@@ -65,7 +68,13 @@ export class BarcodeScanner {
         const rawData = new Uint8Array(buffer);
         // @ts-expect-error ignore typings
         const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.min.mjs");
-        const pdfDocument = await pdfjsLib.getDocument(rawData).promise;
+        const pdfDocument = await pdfjsLib.getDocument({
+            data: rawData,
+            standardFontDataUrl: path.join(pdfjsDir,'./standard_fonts/'),
+            cMapUrl: path.join(pdfjsDir,'./cmaps/'),
+            cMapPacked: true,
+
+        }).promise;
 
         // Prepare wich pages must be scanned
         let pagesNumbers = Array(pdfDocument.numPages).fill(0).map((_, i) => i + 1);
@@ -126,6 +135,7 @@ export class BarcodeScanner {
     private async scanPdfPage(pdfDocument: any, pageNum: number, options: ScanOptions): Promise<ScanResultModel> {
         const pageImageBuffer = await this.extrapolatePdfPage(pdfDocument, pageNum, options);
 
+
         const result = await this.scanImage(pageImageBuffer, options);
         result.results?.forEach((r) => r.index = pageNum);
         return result
@@ -138,6 +148,7 @@ export class BarcodeScanner {
      * @returns An array of ScanImageResult objects containing the decoded QR code text and the engine used for decoding.
      */
     public async scanImage(buffer: Buffer, options: ScanOptions): Promise<ScanResultModel> {
+
 
         let result: ScanResultModel = {
             found: 0,
@@ -173,6 +184,9 @@ export class BarcodeScanner {
         // Process all the buffers. If cropping was applied, this will be multiple buffers
         // If no cropping was applied, this will be a single buffer.
         for (const _buffer of buffers) {
+
+            fs.writeFileSync('./last-scanned.png', _buffer); // For debugging purposes, save the last scanned image
+
 
             // Scan using scanJsqr. Use jsQR first as it's generally faster than zxing.
             // NOTE: this however works only with QR codes, so if the formats include other types of barcodes,
@@ -261,7 +275,7 @@ export class BarcodeScanner {
      * @returns A promise that resolves to the decoded QR code text or null if no QR code is found.
      */
     private async scanZxing(buffer: Buffer, formats: BarcodeFormat[], options: ScanOptions): Promise<string | null> {
-        
+
         // Convert the image to a format suitable for ZXing
         // See ZXIng documentation for more details on how to convert images
         const image = await Jimp.read(buffer);
@@ -272,7 +286,7 @@ export class BarcodeScanner {
         const luminanceSource = new RGBLuminanceSource(luminancesUint8Array, image.bitmap.width, image.bitmap.height);
         const binaryBitmap = new BinaryBitmap(new HybridBinarizer(luminanceSource));
 
-        
+
         const hints = new Map<DecodeHintType, any>();
         hints.set(DecodeHintType.POSSIBLE_FORMATS, formats);
         hints.set(DecodeHintType.TRY_HARDER, true);

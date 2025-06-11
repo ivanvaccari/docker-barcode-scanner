@@ -25,7 +25,46 @@ The service exposes a single scan api at `POST /api/scan` on the listening port.
 
 **Input model**: [./src/models/ScanBodyModel.ts](./src/models/ScanBodyModel.ts)
 
-**Output model**: [./src/models/ScanResultModel.ts](./src/models/ScanResultModel.ts)
+```js
+{
+    // The content type of the data passed in the bytes property. Supported: 'application/pdf', 'image/png', 'image/jpeg'.
+    contentType: 'image/png',
+    // The base64 encoded bytes of the image or PDF document to scan. The maximum size is limited by the MAX_BODY_SIZE env variable, which defaults to 10mb.
+    bytes: 'aabf=',
+    // Optional, Specific pdf options
+    pdfOptions: {
+        // Optional array of page numbers to scan in the PDF document. If not provided, all pages are scanned. Page numbers are 1-based.
+        pages: [1,2],
+        // Scale factor for the PDF pages. Default is 2. The higher scales might help for tiny qrcodes as the whole page is rendered with more resolution.
+        scale: 2 
+    },
+
+    // Array of barcode formats to scan. If not provided, only 2D qrcodes are scanned. Valid only for zxing engine.
+    // See [zxing](https://github.com/zxing-js/library/blob/8b5bf582f0ba7df97d6fcade6560e34e75083aa3/src/core/BarcodeFormat.ts#L28) docs for values.
+    formats: ['QR_CODE'], 
+
+    // Optional, array of crop definitions to be applied to the image before parsing. If you know the area where the QRCode
+    // is expected to be placed, cropping the images to that area dramatically increases scan performance.
+    // Also valid for PDF. Measurements refer to the whole page.
+    // Multiple crops can be applied to parse different regiorn of interests in the same image or PDF page.
+    crop: [{
+        // X coordinate of the top-left corner of the crop area. Value is in % of the image width.
+        x: 50,
+        // Y coordinate of the top-left corner of the crop area. Value is in % of the image height.
+        y: 50,
+        // Width of the crop area. Value is in % of the image width.
+        width: 50
+        // Height of the crop area. Value is in % of the image height.
+        height: 50
+    }],   
+}
+```
+
+**Output model**: see [./src/models/ScanResultModel.ts](./src/models/ScanResultModel.ts)
+
+### Authentication
+
+The service requires the usage of a Bearer token for authentication. The token must be passed in the `Authorization` header of the request. You can set the service expected token using the `BEARER_TOKEN` environment variable.
 
 ### Env Variables
 

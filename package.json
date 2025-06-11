@@ -6,7 +6,7 @@
     "scripts": {
         "test": "tsc && mocha dist/test/**/*.js",
         "build": "tsc",
-        "start": "tsc-watch --noClear -p ./tsconfig.json --onSuccess \"node ./dist/index.js\"",
+        "start": "tsc-watch --noClear -p ./tsconfig.json --onSuccess \"node -r dotenv/config ./dist/index.js\"",
         "postinstall": "run-script-os",
         "clean": "rimraf ./dist",
         "postinstall:linux": "npm install --no-save --ignore-scripts @napi-rs/canvas-linux-x64-gnu@0.1.66",
@@ -39,6 +39,7 @@
         "@sinclair/typebox": "^0.34.33",
         "@zxing/library": "0.21.3",
         "ajv": "^8.17.1",
+        "dotenv": "^16.5.0",
         "ejs": "^3.1.10",
         "express": "^5.1.0",
         "jimp": "^1.6.0",
