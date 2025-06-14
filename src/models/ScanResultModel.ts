@@ -1,10 +1,8 @@
 import { Type, type Static } from '@sinclair/typebox'
 
-
 /**
  * Json schema for ScanResultModel
  */
-
 export const ScanResultModelJsonSchema = Type.Object({
     found: Type.Number(),
     results: Type.Array(Type.Object({

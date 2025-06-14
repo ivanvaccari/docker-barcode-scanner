@@ -21,6 +21,7 @@ import { CustomError } from './RestError';
 import { ScanResultModel } from '../models/ScanResultModel';
 import fs from 'fs';
 import path from 'path';
+import { env } from '../env';
 
 const pdfjsDir = path.join(require.resolve('pdfjs-dist/package.json'), '../');
 
@@ -29,7 +30,6 @@ const pdfjsDir = path.join(require.resolve('pdfjs-dist/package.json'), '../');
  * that must be provided as a buffer
  */
 export type ScanOptions = Omit<ScanBodyModel, 'bytes'>
-
 
 export class BarcodeScanner {
 
@@ -42,16 +42,15 @@ export class BarcodeScanner {
      */
     public async scan(buffer: Buffer, options: ScanOptions): Promise<ScanResultModel> {
         switch (options.contentType) {
-            case 'image/png':
-            case 'image/jpeg':
-                return this.scanImage(buffer, options);
-            case 'application/pdf':
-                return this.scanPdf(buffer, options);
-            default:
-                throw new CustomError(`Unsupported content type: ${options.contentType}`, {}, 400);
+        case 'image/png':
+        case 'image/jpeg':
+            return this.scanImage(buffer, options);
+        case 'application/pdf':
+            return this.scanPdf(buffer, options);
+        default:
+            throw new CustomError(`Unsupported content type: ${options.contentType}`, {}, 400);
         }
     }
-
 
     /**
      * Scan a pdf file buffer for a QR code.
@@ -108,18 +107,18 @@ export class BarcodeScanner {
 
         // NOTE: scale is set to 2 because otherwise the image is too small and the qrcode 
         // gets lost in the noise.
-        var viewport = page.getViewport({ scale: options.pdfOptions?.scale || 2 });
-        var canvasFactory: any = pdfDocument.canvasFactory;
+        const viewport = page.getViewport({ scale: options.pdfOptions?.scale || 2 });
+        const canvasFactory: any = pdfDocument.canvasFactory;
         const canvasAndContext = canvasFactory.create(
             viewport.width,
             viewport.height
         );
-        var renderContext = {
+        const renderContext = {
             canvasContext: canvasAndContext.context,
             viewport: viewport,
         };
 
-        var renderTask = page.render(renderContext);
+        const renderTask = page.render(renderContext);
         await renderTask.promise;
         return canvasAndContext.canvas.toBuffer("image/png");
     }
@@ -135,7 +134,6 @@ export class BarcodeScanner {
     private async scanPdfPage(pdfDocument: any, pageNum: number, options: ScanOptions): Promise<ScanResultModel> {
         const pageImageBuffer = await this.extrapolatePdfPage(pdfDocument, pageNum, options);
 
-
         const result = await this.scanImage(pageImageBuffer, options);
         result.results?.forEach((r) => r.index = pageNum);
         return result
@@ -149,8 +147,7 @@ export class BarcodeScanner {
      */
     public async scanImage(buffer: Buffer, options: ScanOptions): Promise<ScanResultModel> {
 
-
-        let result: ScanResultModel = {
+        const result: ScanResultModel = {
             found: 0,
             results: [],
         }
@@ -185,8 +182,9 @@ export class BarcodeScanner {
         // If no cropping was applied, this will be a single buffer.
         for (const _buffer of buffers) {
 
-            fs.writeFileSync('./last-scanned.png', _buffer); // For debugging purposes, save the last scanned image
-
+            if (env.IMAGE_DEBUG){
+                fs.writeFileSync('./image-debug/'+(new Date().toISOString().replace(/[^a-zA-Z0-9]/g,'-'))+'.png', _buffer); // For debugging purposes, save the last scanned image
+            }
 
             // Scan using scanJsqr. Use jsQR first as it's generally faster than zxing.
             // NOTE: this however works only with QR codes, so if the formats include other types of barcodes,
@@ -214,11 +212,10 @@ export class BarcodeScanner {
                 });
             }
 
-
             // If jsQR didn't find a QR code, try zxing
             startTime = Date.now();
             try {
-                const zxingResult = await this.scanZxing(_buffer, formats, options);
+                const zxingResult = await this.scanZxing(_buffer, formats);
                 if (zxingResult) {
                     result.found++;
                     result.results.push({
@@ -274,7 +271,7 @@ export class BarcodeScanner {
      * 
      * @returns A promise that resolves to the decoded QR code text or null if no QR code is found.
      */
-    private async scanZxing(buffer: Buffer, formats: BarcodeFormat[], options: ScanOptions): Promise<string | null> {
+    private async scanZxing(buffer: Buffer, formats: BarcodeFormat[]): Promise<string | null> {
 
         // Convert the image to a format suitable for ZXing
         // See ZXIng documentation for more details on how to convert images
@@ -286,7 +283,6 @@ export class BarcodeScanner {
         const luminanceSource = new RGBLuminanceSource(luminancesUint8Array, image.bitmap.width, image.bitmap.height);
         const binaryBitmap = new BinaryBitmap(new HybridBinarizer(luminanceSource));
 
-
         const hints = new Map<DecodeHintType, any>();
         hints.set(DecodeHintType.POSSIBLE_FORMATS, formats);
         hints.set(DecodeHintType.TRY_HARDER, true);
@@ -297,7 +293,6 @@ export class BarcodeScanner {
         return null
     }
 
-
     /**
      * Scan a converted grayscale image buffer for a QR code using the jsQR library.
      * 
@@ -305,8 +300,7 @@ export class BarcodeScanner {
      * 
      * @returns A promise that resolves to the decoded QR code text or null if no QR code is found.
      */
-    private async scanJsqr(buffer: Buffer, formats: BarcodeFormat[], options: ScanOptions): Promise<string | null> {
-
+    private async scanJsqr(buffer: Buffer, formats: BarcodeFormat[]): Promise<string | null> {
 
         // jsQR only supports QR codes. Skip this if the format is not QR_CODE.
         if (!formats.includes(BarcodeFormat.QR_CODE)) {
@@ -318,6 +312,5 @@ export class BarcodeScanner {
         return value?.data ? value.data : null
 
     }
-
 
 }

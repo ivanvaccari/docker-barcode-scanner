@@ -2,7 +2,6 @@ import { Type, type Static } from '@sinclair/typebox'
 import { env } from '../env'
 import { BarcodeFormat } from '@zxing/library'
 
-
 const barcodeFormats = Object.values(BarcodeFormat);
 const barcodeFormatsForEnum = barcodeFormats.reduce((acc, format) => {
     acc[format] = format as string;

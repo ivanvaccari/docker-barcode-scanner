@@ -30,5 +30,11 @@ export const env = {
     /**
      * A copy of the package.json file.
      */
-    PACKAGE_JSON: JSON.parse(fs.readFileSync('./package.json', 'utf-8'))
+    PACKAGE_JSON: JSON.parse(fs.readFileSync('./package.json', 'utf-8')),
+
+    /**
+     * If true, write to ./image-debug the image being processed by the scanner.
+     */
+    IMAGE_DEBUG: process.env.IMAGE_DEBUG === 'true' || false,
 }
+

@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import { CustomError } from "./RestError";
 import { env } from "../env";
 
-
 /**
  * A simple bearer token authentication middleware. Just checks the passed-in bearer token against
  * the one defined in the environment variable

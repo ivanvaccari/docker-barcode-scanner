@@ -49,7 +49,7 @@ app.get('/', (req, res, next) => {
 /**
  * Error handler. Just sends out the error as a json response.
  */
-app.use((error: any, req: Request, res: Response, next: NextFunction) => {
+app.use((error: any, req: Request, res: Response, ) => {
     let _error: CustomError;
     if (error instanceof CustomError) _error = error;
     else if (error instanceof Error) _error = new CustomError(error.message, { stack: error.stack }, 500);

@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 
-
 /**
  * A wrapper for express middlewares that allows the use of async functions.
  * 

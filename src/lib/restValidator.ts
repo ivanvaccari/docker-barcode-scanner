@@ -1,7 +1,9 @@
 import Ajv from "ajv";
 import { CustomError } from "./RestError";
+import { TObject } from "@sinclair/typebox";
+import { Request, Response, NextFunction} from "express";
 
-let ajv = new Ajv({ strict: true, verbose: true })
+const ajv = new Ajv({ strict: true, verbose: true })
 
 /**
  * Validates the request body with the provided json schema
@@ -10,12 +12,11 @@ let ajv = new Ajv({ strict: true, verbose: true })
  * @returns A express middleware function that validates the request body and optionally 
  * throws a CustomError if the validation fails
  */
-function body(schema: any) {
+function body<SCHEMA extends TObject>(schema: SCHEMA) {
 
     const validate = ajv.compile(schema)
 
-    return (req: any, res: any, next: any) => {
-        const body = req.body;
+    return (req: Request, res: Response, next: NextFunction) => {
         const valid = validate(req.body);
 
         // If the body is not valid, throw a CustomError with the validation errors
@@ -25,7 +26,6 @@ function body(schema: any) {
         next();
     }
 }
-
 
 export const restValidator = {
     body: body
