@@ -26,7 +26,19 @@ Docker image at [https://hub.docker.com/r/ivaccari/barcode-scanner](https://hub.
 
 ## Usage
 
-Run with docker using `docker run -e BEARER_TOKEN=myToken -p 3000:3000 ivaccari/barcode-scanner`.
+Run with docker using `docker run -e BEARER_TOKEN=myToken -p 3000:3000 ivaccari/barcode-scanner`, alternatively use docker-compose:
+
+```yml
+sevices:
+  barcodescanner:
+    image: ivaccari/barcode-scanner
+    ports:
+      - 3000:3000
+    environment:
+      - BEARER_TOKEN=myToken
+```     
+
+
 The service exposes the following routes:
 - **GET /**: A placeholder page with some documentation
 - **POST /api/scan**: the scan api
