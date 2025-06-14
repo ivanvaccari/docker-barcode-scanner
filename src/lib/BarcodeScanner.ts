@@ -108,7 +108,7 @@ export class BarcodeScanner {
         // NOTE: scale is set to 2 because otherwise the image is too small and the qrcode 
         // gets lost in the noise.
         const viewport = page.getViewport({ scale: options.pdfOptions?.scale || 2 });
-        const canvasFactory: any = pdfDocument.canvasFactory;
+        const canvasFactory = pdfDocument.canvasFactory;
         const canvasAndContext = canvasFactory.create(
             viewport.width,
             viewport.height
@@ -131,7 +131,7 @@ export class BarcodeScanner {
      * @param options  
      * @returns 
      */
-    private async scanPdfPage(pdfDocument: any, pageNum: number, options: ScanOptions): Promise<ScanResultModel> {
+    private async scanPdfPage(pdfDocument: unknown, pageNum: number, options: ScanOptions): Promise<ScanResultModel> {
         const pageImageBuffer = await this.extrapolatePdfPage(pdfDocument, pageNum, options);
 
         const result = await this.scanImage(pageImageBuffer, options);
@@ -191,7 +191,7 @@ export class BarcodeScanner {
             // it will skip them internally.
             let startTime = Date.now();
             try {
-                const jsqrResult = await this.scanJsqr(_buffer, formats, options);
+                const jsqrResult = await this.scanJsqr(_buffer, formats);
                 if (jsqrResult) {
                     result.found++;
                     result.results.push({
@@ -283,7 +283,7 @@ export class BarcodeScanner {
         const luminanceSource = new RGBLuminanceSource(luminancesUint8Array, image.bitmap.width, image.bitmap.height);
         const binaryBitmap = new BinaryBitmap(new HybridBinarizer(luminanceSource));
 
-        const hints = new Map<DecodeHintType, any>();
+        const hints = new Map<DecodeHintType, unknown>();
         hints.set(DecodeHintType.POSSIBLE_FORMATS, formats);
         hints.set(DecodeHintType.TRY_HARDER, true);
         const reader = new MultiFormatReader();

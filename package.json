@@ -11,8 +11,10 @@
         "clean": "rimraf ./dist",
         "postinstall:linux": "npm install --no-save --ignore-scripts @napi-rs/canvas-linux-x64-gnu@0.1.66",
         "postinstall:win32": "npm install --no-save --ignore-scripts @napi-rs/canvas-win32-x64-msvc@0.1.66",
-        "build-docker-cmd": "docker build -t ivaccai/barcode-scanner .",
-        "build-docker": "run-s clean build build-docker-cmd"
+        "docker-cmd-build": "docker-cmd.sh --build",
+        "docker-cmd-push": "docker-cmd.sh --push",
+        "docker-build": "run-s clean build docker-cmd-build",
+        "docker-push": "run-s docker-build docker-cmd-push"
     },
     "repository": {
         "type": "git",

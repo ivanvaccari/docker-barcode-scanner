@@ -26,9 +26,12 @@ See zxing [library](https://github.com/zxing-js/library/blob/075b1c6f6797831ad46
 
 ## Usage
 
-Run with docker using `docker run -e BEARER_TOKEN=myToken -p 3000:3000 ivanva/docker-barcode-scanner`.
+Run with docker using `docker run -e BEARER_TOKEN=myToken -p 3000:3000 ivaccari/barcode-scanner`.
+The service exposes the following routes:
+- **GET /**: A placeholder page with some documentation
+- **POST /api/scan**: the scan api
 
-The service exposes a single scan api at `POST /api/scan` on the listening port.
+### Scan API
 
 **Input model**: [./src/models/ScanBodyModel.ts](./src/models/ScanBodyModel.ts)
 

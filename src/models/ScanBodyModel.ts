@@ -19,7 +19,7 @@ export const ScanBodyModelJsonSchema = Type.Object({
     }, { description: 'Content type of the file expressed in <bytes> property.' }),
 
     bytes: Type.String({
-        description: 'Base64 encoded bytes of the image or PDF file to scan. Size limit: ' + env.MAX_BODY_SIZE
+        description: 'Base64 encoded bytes of the image or PDF file to scan, without the initial \'data:image/XXX;base64,\' part. Size limit: ' + env.MAX_BODY_SIZE
     }),
 
     pdfOptions: Type.Optional(Type.Object({

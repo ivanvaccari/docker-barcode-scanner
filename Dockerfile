@@ -6,6 +6,9 @@ WORKDIR /usr/src/app
 
 COPY dist ./dist/
 COPY package*.json ./
+COPY views ./views/
+
+RUN mkdir ./image-debug
 
 RUN npm install --omit=dev  && npm cache clean --force
 

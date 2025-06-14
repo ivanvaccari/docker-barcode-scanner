@@ -12,7 +12,6 @@ import { bearerTokenAuthMiddleware } from './lib/bearerTokenAuthMiddleware';
 const app = express();
 
 app.use(express.json({ limit: env.MAX_BODY_SIZE })); 
-app.use(bearerTokenAuthMiddleware);
 
 //For rendering the main web page
 app.set('view engine', 'ejs');
@@ -20,13 +19,16 @@ app.set('view engine', 'ejs');
 /**
  * The main entry point to run the scan service.
  */
-app.post('/api/scan', restValidator.body(ScanBodyModelJsonSchema), asyncMiddleware(async (req, res) => {
+
+const apiRouter = express.Router();
+apiRouter.post('/scan', restValidator.body(ScanBodyModelJsonSchema), asyncMiddleware(async (req, res) => {
     const body: ScanBodyModel = req.body;
     const buffer = Buffer.from(body.bytes, 'base64');
     const scanner = new BarcodeScanner();
     const scanResult = await scanner.scan(buffer, req.body);
     res.json(scanResult);
 }));
+app.use('/api', bearerTokenAuthMiddleware, apiRouter);
 
 /**
  * Main web page. This is just a placeholder that displays some documentation
@@ -49,7 +51,7 @@ app.get('/', (req, res, next) => {
 /**
  * Error handler. Just sends out the error as a json response.
  */
-app.use((error: any, req: Request, res: Response, ) => {
+app.use((error: any, req: Request, res: Response, _unused: NextFunction) => {
     let _error: CustomError;
     if (error instanceof CustomError) _error = error;
     else if (error instanceof Error) _error = new CustomError(error.message, { stack: error.stack }, 500);
@@ -57,7 +59,9 @@ app.use((error: any, req: Request, res: Response, ) => {
 
     res.status(error?.statusCode ?? 500).json(_error)
 })
-
+app.use((req, res) => {
+    res.status(404).send('Not found');
+});
 app.listen(env.PORT, () => {
     console.log(`Http server listening on port ${env.PORT}`)
 })
