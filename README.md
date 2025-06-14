@@ -17,6 +17,13 @@ Supported 1D/2D formats:
 
 See zxing [library](https://github.com/zxing-js/library/blob/075b1c6f6797831ad46507bb2e551d9b721ffcf3/README.md#supported-formats) for more info.
 
+## Requirements
+
+- Node > 20.16.0
+
+## Known bugs
+- pdfjs-dist fails to render qrcodes generated using system fonts
+
 ## Usage
 
 Run with docker using `docker run -e BEARER_TOKEN=myToken -p 3000:3000 ivanva/docker-barcode-scanner`.
