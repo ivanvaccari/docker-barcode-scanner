@@ -1,7 +1,5 @@
 # docker-barcode-scanner
 
-# NOTE: WIP, NOT PRODUCTION READY at 10-06-2025
-
 A microservice that scans for 1D/2D in PNG images, JPEG images and PDF files.
 
 Supported 1D/2D formats:

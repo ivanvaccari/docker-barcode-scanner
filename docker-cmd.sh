@@ -26,6 +26,9 @@ fi
 if [ "$PUSH" = true ]; then
     echo "Pushing Docker image..."
     
-    git tag
+    git tag $VERSION
+    git push origin $VERSION
+
     docker push -t ivaccari/barcode-scanner:$VERSION
+    docker push -t ivaccari/barcode-scanner:latest
 fi
