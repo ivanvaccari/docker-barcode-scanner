@@ -15,6 +15,8 @@ Supported 1D/2D formats:
 
 See zxing [library](https://github.com/zxing-js/library/blob/075b1c6f6797831ad46507bb2e551d9b721ffcf3/README.md#supported-formats) for more info.
 
+Docker image at [https://hub.docker.com/r/ivaccari/barcode-scanner](https://hub.docker.com/r/ivaccari/barcode-scanner)
+
 ## Requirements
 
 - Node > 20.16.0

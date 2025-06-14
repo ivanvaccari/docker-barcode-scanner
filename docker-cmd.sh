@@ -29,6 +29,6 @@ if [ "$PUSH" = true ]; then
     git tag $VERSION
     git push origin $VERSION
 
-    docker push -t ivaccari/barcode-scanner:$VERSION
-    docker push -t ivaccari/barcode-scanner:latest
+    docker push ivaccari/barcode-scanner:$VERSION
+    docker push ivaccari/barcode-scanner:latest
 fi
