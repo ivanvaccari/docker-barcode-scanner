@@ -1,8 +1,8 @@
 # docker-barcode-scanner
 
-A microservice that scans for 1D/2D in PNG images, JPEG images and PDF files.
+A microservice that proveds a rest api to scan images and pdf files for barcodes and QRCodes. 
 
-Supported 1D/2D formats:
+Supported formats:
 
 | 1D product | 1D industrial                        | 2D           |
 | ---------- |--------------------------------------|--------------|
@@ -13,7 +13,7 @@ Supported 1D/2D formats:
 |            | ITF                                  |              |
 |            | RSS-14                               |              |
 
-See zxing [library](https://github.com/zxing-js/library/blob/075b1c6f6797831ad46507bb2e551d9b721ffcf3/README.md#supported-formats) for more info.
+This service internally uses [zxing](https://github.com/zxing-js/library/blob/075b1c6f6797831ad46507bb2e551d9b721ffcf3/README.md#supported-formats) to scan images. See zxing docs for info.
 
 Docker image at [https://hub.docker.com/r/ivaccari/barcode-scanner](https://hub.docker.com/r/ivaccari/barcode-scanner)
 
