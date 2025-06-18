@@ -1,6 +1,6 @@
 # docker-barcode-scanner
 
-A microservice that proveds a rest api to scan images and pdf files for barcodes and QRCodes. 
+A microservice that provides a rest api to scan images and pdf files for barcodes and QRCodes. 
 
 Supported formats:
 
